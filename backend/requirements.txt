@@ -3,3 +3,4 @@ flask-cors
 weasyprint
 google-genai
 python-dotenv
+gunicorn

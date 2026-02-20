@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════
+# Docker Compose — PRODUCCIÓN
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# ═══════════════════════════════════════
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: tareinador-api
+    volumes:
+      - uploads:/app/uploads
+      - outputs:/app/outputs
+    env_file:
+      - .env
+    environment:
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: tareinador-web
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app-net
+
+volumes:
+  uploads:
+  outputs:
+
+networks:
+  app-net:
+    driver: bridge
