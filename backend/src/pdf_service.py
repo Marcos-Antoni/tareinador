@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from weasyprint import HTML
 from .config import OUTPUT_DIR
+from .page_analyzer import calculate_page_map
 
 
 def build_document_html(doc):
@@ -17,13 +18,14 @@ def build_document_html(doc):
     """
     sections_html = []
 
-    # --- Carátula (siempre presente) ---
-    if "caratula" in doc["sections"]:
+    # --- Carátula ---
+    if "caratula" in doc.get("sections", []):
         sections_html.append(_render_cover(doc))
 
-    # --- Índice ---
-    if "indice" in doc["sections"]:
-        sections_html.append(_render_toc(doc))
+    # --- Índice con números de página reales ---
+    if "indice" in doc.get("sections", []):
+        page_map = calculate_page_map(doc)
+        sections_html.append(_render_toc(page_map))
 
     # --- Páginas de contenido ---
     for page in doc.get("pages", []):
@@ -58,32 +60,68 @@ def build_document_html(doc):
             height: 90vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             text-align: center;
             border: 3px double #1a2332;
-            padding: 60px 40px;
+            padding: 50px 40px;
             page-break-after: always;
         }}
-        .cover h1 {{
-            font-size: 2.4em;
+        .cover-header {{
+            margin-top: 20px;
+        }}
+        .cover-header .uni-name {{
+            font-size: 1.4em;
+            font-weight: bold;
             color: #1a2332;
-            margin-bottom: 10px;
-            line-height: 1.3;
+            margin: 0;
         }}
-        .cover .meta {{
-            margin-top: 60px;
-            font-size: 1.15em;
+        .cover-header .uni-center {{
+            font-size: 1.1em;
+            color: #333;
+            margin: 4px 0 0 0;
+        }}
+        .cover-middle {{
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+        .cover-middle .carrera {{
+            font-size: 1.05em;
             color: #444;
+            margin-bottom: 8px;
         }}
-        .cover .meta p {{
-            margin: 8px 0;
+        .cover-middle .docente {{
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 6px;
         }}
-        .cover .university {{
-            margin-top: 40px;
-            font-size: 0.9em;
-            color: #999;
-            font-style: italic;
+        .cover-middle .materia {{
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+        }}
+        .cover-middle .semestre {{
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 30px;
+        }}
+        .cover-middle .work-title {{
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1a2332;
+            line-height: 1.3;
+            margin: 0;
+        }}
+        .cover-footer {{
+            margin-bottom: 20px;
+        }}
+        .cover-footer p {{
+            margin: 5px 0;
+            font-size: 1em;
+            color: #333;
         }}
 
         /* --- Índice --- */
@@ -96,14 +134,20 @@ def build_document_html(doc):
             padding-bottom: 8px;
             margin-bottom: 25px;
         }}
-        .toc ul {{
-            list-style: none;
-            padding: 0;
+        .toc table {{
+            width: 100%;
+            border-collapse: collapse;
         }}
-        .toc li {{
-            padding: 8px 0;
+        .toc td {{
+            padding: 8px 4px;
             border-bottom: 1px dotted #ccc;
             font-size: 1.05em;
+        }}
+        .toc td.toc-page {{
+            text-align: right;
+            width: 50px;
+            font-weight: bold;
+            color: #1a2332;
         }}
 
         /* --- Contenido --- */
@@ -159,34 +203,69 @@ def build_document_html(doc):
 
 
 def _render_cover(doc):
-    """Renderiza la carátula del documento."""
+    """Renderiza la carátula del documento con todos los datos universitarios."""
+    universidad = doc.get("universidad", "")
+    centro = doc.get("centro", "")
+    carrera = doc.get("carrera", "")
+    docente = doc.get("docente", "")
+    materia = doc.get("materia", "")
+    semestre = doc.get("semestre", "")
+    author = doc.get("author", "")
+    carnet = doc.get("carnet", "")
+    sede = doc.get("sede", "")
+    title = doc.get("title", "")
+    date = doc.get("date", "")
+
+    # Construir sede + fecha
+    sede_fecha = ""
+    if sede:
+        sede_fecha = f"{sede}, {date}"
+    else:
+        sede_fecha = date
+
+    # Filas opcionales
+    docente_html = f'<p class="docente">Docente: {docente}</p>' if docente else ""
+    semestre_html = f'<p class="semestre">{semestre}</p>' if semestre else ""
+
     return f"""
     <div class="cover">
-        <h1>{doc['title']}</h1>
-        <div class="meta">
-            <p><strong>Autor:</strong> {doc['author']}</p>
-            <p><strong>Carnet:</strong> {doc['carnet']}</p>
-            <p><strong>Fecha:</strong> {doc['date']}</p>
+        <div class="cover-header">
+            <p class="uni-name">{universidad}</p>
+            <p class="uni-center">{centro}</p>
         </div>
-        <div class="university">
-            <p><em>Generado por El Tareinador</em></p>
+        <div class="cover-middle">
+            <p class="carrera">{carrera}</p>
+            {docente_html}
+            <p class="materia">{materia}</p>
+            {semestre_html}
+            <h1 class="work-title">{title}</h1>
+        </div>
+        <div class="cover-footer">
+            <p><strong>Nombre:</strong> {author}</p>
+            <p><strong>Carné:</strong> {carnet}</p>
+            <p>{sede_fecha}</p>
         </div>
     </div>"""
 
 
-def _render_toc(doc):
-    """Renderiza el índice / tabla de contenidos."""
-    items = []
-    for i, page in enumerate(doc.get("pages", []), 1):
-        items.append(f'        <li>{i}. {page.get("title", "Sin título")}</li>')
+def _render_toc(page_map):
+    """
+    Renderiza el índice con números de página calculados por el analizador.
+    - page_map: lista de { "title": "...", "start_page": N }
+    """
+    rows = []
+    for entry in page_map:
+        title = entry["title"]
+        page_num = entry["start_page"]
+        rows.append(f'        <tr><td>{title}</td><td class="toc-page">{page_num}</td></tr>')
 
-    items_html = "\n".join(items)
+    rows_html = "\n".join(rows)
     return f"""
     <div class="toc">
         <h2>Índice</h2>
-        <ul>
-{items_html}
-        </ul>
+        <table>
+{rows_html}
+        </table>
     </div>"""
 
 

@@ -1,17 +1,20 @@
 """
-Tareinador V2 — Generador de Tareas Académicas con IA
-- Flask app principal
-- Registra rutas y sirve archivos estáticos
+Tareinador V3 — Flask API Backend
+API REST independiente del frontend.
 """
 from flask import Flask, send_from_directory
+from flask_cors import CORS
 from src.config import HOST, PORT, UPLOAD_DIR
 
 
 def create_app():
-    app = Flask(__name__, static_folder="static", static_url_path="/static")
+    app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 
-    # Registrar rutas
+    # CORS: permitir peticiones del frontend React (Vite)
+    CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
+
+    # Registrar rutas API
     from src.routes import api
     app.register_blueprint(api)
 

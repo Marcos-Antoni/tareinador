@@ -1,11 +1,11 @@
 """
-Rutas de la API y vistas de la aplicación.
-- Endpoints REST para generación, edición, preview y descarga
+Rutas de la API REST.
+- Endpoints para generación, edición, preview y descarga
 - Manejo de subida de imágenes
 """
 import os
 import uuid
-from flask import Blueprint, render_template, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file
 from .document_store import (
     create_document, save_document, get_document,
     update_page, add_image_to_page, remove_image_from_page,
@@ -17,34 +17,44 @@ from .config import UPLOAD_DIR
 api = Blueprint("api", __name__)
 
 
-# ─── Página principal ───
-@api.route("/")
-def index():
-    return render_template("index.html")
-
-
 # ─── Generar documento con IA ───
 @api.route("/api/generate", methods=["POST"])
 def api_generate():
     """
     Recibe la configuración del documento y genera el contenido con Gemini.
-    Body JSON: { title, topic, author, carnet, sections: [...] }
+    Body JSON: { title, author, carnet, includeCaratula, includeIndice,
+                 sections: [{ name, description, pages }] }
     """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Se requieren datos JSON"}), 400
 
     title = data.get("title", "Sin título")
-    topic = data.get("topic", title)
     author = data.get("author", "Estudiante")
     carnet = data.get("carnet", "")
-    sections = data.get("sections", ["caratula"])
+    include_caratula = data.get("includeCaratula", True)
+    include_indice = data.get("includeIndice", True)
+    sections = data.get("sections", [])
 
     # Crear documento en el store
-    doc_id, doc = create_document(title, author, carnet, sections)
+    section_ids = ["caratula"] if include_caratula else []
+    if include_indice:
+        section_ids.append("indice")
+    doc_id, doc = create_document(title, author, carnet, section_ids)
+    doc["includeCaratula"] = include_caratula
+    doc["includeIndice"] = include_indice
+
+    # Datos universitarios para la carátula
+    doc["universidad"] = data.get("universidad", "")
+    doc["centro"] = data.get("centro", "")
+    doc["carrera"] = data.get("carrera", "")
+    doc["docente"] = data.get("docente", "")
+    doc["materia"] = data.get("materia", "")
+    doc["semestre"] = data.get("semestre", "")
+    doc["sede"] = data.get("sede", "")
 
     # Generar contenido con Gemini
-    pages = generate_document(topic, title, sections, author, carnet)
+    pages = generate_document(title, sections, author, carnet)
 
     # Agregar lista de imágenes vacía a cada página
     for page in pages:

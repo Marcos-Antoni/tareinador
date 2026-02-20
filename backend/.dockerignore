@@ -3,7 +3,4 @@ __pycache__/
 outputs/
 uploads/
 .git/
-.gitignore
-.dockerignore
-.env.example
 *.md
