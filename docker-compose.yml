@@ -1,0 +1,12 @@
+services:
+  tareinador:
+    build: .
+    container_name: tareinador
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+    env_file:
+      - .env
+    restart: unless-stopped

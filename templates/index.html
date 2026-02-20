@@ -1,44 +1,198 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tareinador - Generador de PDF</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <style>
-        body { padding: 2rem; }
-        .container { max-width: 800px; }
-        textarea { height: 300px; }
-    </style>
+    <title>Tareinador — Generador de Tareas con IA</title>
+    <meta name="description"
+        content="Genera tareas y trabajos académicos con inteligencia artificial. Preview, edición y descarga PDF.">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
 </head>
+
 <body>
-    <main class="container">
-        <h1>🛠️ El Tareinador</h1>
-        <p>Escribe tu contenido y conviértelo en un PDF académico instantáneo.</p>
-        
-        <form action="/generate" method="POST">
-            <label for="title">Título del Trabajo</label>
-            <input type="text" id="title" name="title" placeholder="Ej: Investigación sobre RAG" required>
-            
-            <div class="grid">
-                <div>
-                    <label for="author">Autor</label>
-                    <input type="text" id="author" name="author" value="Marco">
-                </div>
-                <div>
-                    <label for="style">Estilo</label>
-                    <select id="style" name="style">
-                        <option value="formal">Universitario Formal</option>
-                        <option value="modern">Moderno</option>
-                    </select>
+    <div class="app-container">
+
+        <!-- ═══ Header ═══ -->
+        <header class="app-header">
+            <h1>🛠️ El Tareinador</h1>
+            <p class="subtitle">Genera tareas académicas con inteligencia artificial</p>
+        </header>
+
+        <!-- ═══════════════════════════════════════════
+             VIEW 1: SETUP — Configuración del documento
+             ═══════════════════════════════════════════ -->
+        <div id="view-setup" class="view active">
+            <div class="glass-card">
+                <form id="setup-form">
+                    <!-- Datos del estudiante -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-author">Nombre Completo</label>
+                            <input type="text" id="input-author" placeholder="Ej: Marco Antonio López" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-carnet">Carnet</label>
+                            <input type="text" id="input-carnet" placeholder="Ej: 2024-1234" required>
+                        </div>
+                    </div>
+
+                    <!-- Datos del trabajo -->
+                    <div class="form-group">
+                        <label for="input-title">Título del Trabajo</label>
+                        <input type="text" id="input-title" placeholder="Ej: La Revolución Industrial y sus Efectos"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="input-topic">Descripción del tema / Instrucciones para la IA</label>
+                        <textarea id="input-topic"
+                            placeholder="Describe qué quieres que investigue la IA. Ej: Investigar sobre las causas y consecuencias de la Revolución Industrial, incluyendo avances tecnológicos y cambios sociales..."></textarea>
+                    </div>
+
+                    <!-- Secciones del documento -->
+                    <div class="form-group">
+                        <label>Secciones del documento</label>
+                        <div class="sections-grid">
+                            <label class="section-option disabled">
+                                <input type="checkbox" class="section-checkbox" value="caratula" checked disabled>
+                                <span class="checkmark"></span>
+                                <span class="label-text">📋 Carátula</span>
+                                <span class="label-tag">Obligatorio</span>
+                            </label>
+                            <label class="section-option">
+                                <input type="checkbox" class="section-checkbox" value="indice" checked>
+                                <span class="checkmark"></span>
+                                <span class="label-text">📑 Índice</span>
+                            </label>
+                            <label class="section-option">
+                                <input type="checkbox" class="section-checkbox" value="introduccion" checked>
+                                <span class="checkmark"></span>
+                                <span class="label-text">📝 Introducción</span>
+                            </label>
+                            <label class="section-option">
+                                <input type="checkbox" class="section-checkbox" value="conclusion" checked>
+                                <span class="checkmark"></span>
+                                <span class="label-text">✅ Conclusión</span>
+                            </label>
+                            <label class="section-option">
+                                <input type="checkbox" class="section-checkbox" value="bibliografia" checked>
+                                <span class="checkmark"></span>
+                                <span class="label-text">📚 Bibliografía</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="btn-generate">
+                        🤖 Generar con IA
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             VIEW 2: EDITOR — Preview + Edición por página
+             ═══════════════════════════════════════════ -->
+        <div id="view-editor" class="view">
+            <!-- Navegación de páginas -->
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <div class="page-nav">
+                    <button class="btn btn-secondary btn-sm" id="btn-prev-page">← Anterior</button>
+                    <div style="text-align:center;">
+                        <div class="page-indicator" id="page-indicator">Página 1 de 1</div>
+                        <div class="page-title" id="page-title">—</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-next-page">Siguiente →</button>
                 </div>
             </div>
 
-            <label for="content">Contenido (puedes usar HTML básico)</label>
-            <textarea id="content" name="content" placeholder="Pega aquí el texto de tu investigación..."></textarea>
-            
-            <button type="submit" class="contrast">Generar y Descargar PDF 📄</button>
-        </form>
-    </main>
+            <!-- Layout: Preview + Sidebar -->
+            <div class="editor-layout">
+                <!-- Preview de la página -->
+                <div class="preview-panel">
+                    <div class="preview-content" id="preview-content">
+                        <p style="color:#999; text-align:center; padding: 4rem 0;">Genera un documento para comenzar</p>
+                    </div>
+                </div>
+
+                <!-- Panel lateral de herramientas -->
+                <div class="sidebar-panel">
+                    <!-- AI Edit -->
+                    <div class="sidebar-section">
+                        <h3>🤖 Editar con IA</h3>
+                        <textarea class="ai-instructions-area" id="ai-instructions"
+                            placeholder="Ej: Haz la introducción más formal, agrega más datos estadísticos..."></textarea>
+                        <button class="btn btn-primary btn-sm btn-block" id="btn-ai-edit" style="margin-top: 0.75rem;">
+                            Aplicar con IA
+                        </button>
+                    </div>
+
+                    <!-- Manual Edit -->
+                    <div class="sidebar-section">
+                        <h3>✏️ Edición manual</h3>
+                        <button class="btn btn-secondary btn-sm btn-block" id="btn-toggle-edit">
+                            ✏️ Editar manualmente
+                        </button>
+                        <button class="btn btn-success btn-sm btn-block" id="btn-save-edit"
+                            style="display:none; margin-top: 0.5rem;">
+                            💾 Guardar cambios
+                        </button>
+                    </div>
+
+                    <!-- Images -->
+                    <div class="sidebar-section">
+                        <h3>📸 Imágenes</h3>
+                        <div class="image-gallery" id="image-gallery"></div>
+                        <div class="upload-area" id="upload-area" style="margin-top: 0.75rem;">
+                            <div class="upload-icon">📁</div>
+                            <p>Arrastra o haz clic para subir imagen</p>
+                        </div>
+                        <input type="file" id="image-upload-input" accept="image/*" style="display:none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action bar -->
+            <div class="action-bar">
+                <div class="left-actions">
+                    <button class="btn btn-secondary btn-sm" id="btn-new-doc">📝 Nuevo documento</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-full-preview">👁️ Vista completa</button>
+                </div>
+                <div class="right-actions">
+                    <button class="btn btn-success" id="btn-download">📄 Descargar PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             VIEW 3: FULL PREVIEW — Documento completo
+             ═══════════════════════════════════════════ -->
+        <div id="view-preview" class="view">
+            <div class="glass-card" style="padding: 1rem;">
+                <div class="action-bar" style="padding: 0.5rem 0;">
+                    <button class="btn btn-secondary btn-sm" id="btn-back-editor">← Volver al editor</button>
+                    <button class="btn btn-success btn-sm" id="btn-new-doc" onclick="handleDownload()">📄 Descargar
+                        PDF</button>
+                </div>
+                <iframe id="full-preview-iframe"
+                    style="width:100%; height:80vh; border:none; border-radius: 8px; background: white;"></iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══ Loading Overlay ═══ -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Generando con IA...</p>
+    </div>
+
+    <!-- ═══ Toast Notification ═══ -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/app.js"></script>
 </body>
+
 </html>
